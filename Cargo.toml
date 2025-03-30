@@ -1,0 +1,18 @@
+[package]
+name = "ywt"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4.10.2"
+anyhow = "1.0.97"
+argon2 = "0.5.3"
+chrono = "0.4.40"
+clap = { version = "4.5.32", features = ["derive"] }
+env_logger = "0.11.7"
+log = "0.4.26"
+mongodb = "3.2.3"
+rand = "0.9.0"
+serde = "1.0.219"
+serde_json = "1.0.140"
+tokio = "1.44.1"
