@@ -8,8 +8,7 @@ use serde_json;
 use actix_web::{middleware::Logger, web, App, HttpServer, ResponseError};
 use actix_cors::Cors;
 
-use ywt::api::register;
-use ywt::api::login;
+use ywt::api::{register, login, profile};
 use ywt::cli::Cli;
 use ywt::config::Config;
 use ywt::error::ApiError;
@@ -60,6 +59,7 @@ async fn main() -> Result<()> {
             .app_data(web::Data::new(db.clone()))
             .service(register::api_scope())
             .service(login::api_scope())
+            .service(profile::api_scope())
             .default_service(web::to(|| async {
                 ApiError::new_not_found().error_response()
             }))
