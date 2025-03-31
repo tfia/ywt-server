@@ -35,6 +35,8 @@ You need to set environment variable `YWT_SECRET`, which is used as the secret k
 
 Environment variable `RUST_LOG` is used to set the log level. You can set it to `info`, `debug`, or `error`. If you don't set it, the app will use a default value of `info`.
 
+You can set the environment variables in your shell or in a `.env` file. The app will automatically load the environment variables from the `.env` file if it exists.
+
 Suppose the binary excutable you built is `ywt`, you can start the server by:
 
 ```text
@@ -50,7 +52,13 @@ The server will start listening on the specified address and port, and connect t
 
 ## APIs
 
-- POST `/register`
+Notice that APIs with [Authentication required] require a valid JWT token in the `Authorization` header. The token is obtained by logging in with the `/login` API. Example:
+
+```text
+Authorization: Bearer <token>
+```
+
+### POST `/register`
 
 Request:
 
@@ -70,7 +78,7 @@ Response:
 }
 ```
 
-- POST `/login`
+### POST `/login`
 
 Request:
 
@@ -90,3 +98,13 @@ Response:
 ```
 
 This returns a JWT with JSON payload `{"username": , "iat": , "exp": }`. The token is valid for 12 hours.
+
+### GET `/profile` [Authentication required]
+
+Response:
+
+```json
+{
+    "created_at": "2025-03-30 23:49:27.224212194 +08:00"
+}
+```
