@@ -5,6 +5,7 @@ use env_logger;
 use log;
 use serde_json;
 use actix_web::{middleware::Logger, web, App, HttpServer, ResponseError};
+use actix_cors::Cors;
 
 use ywt::api::register;
 use ywt::api::login;
@@ -46,8 +47,14 @@ async fn main() -> Result<()> {
     let db = client.database(&mongo_db);
 
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allowed_methods(vec!["GET", "POST"])
+            .allow_any_header()
+            .max_age(3600);
         App::new()
             .wrap(Logger::default())
+            .wrap(cors)
             .app_data(web::Data::new(db.clone()))
             .service(register::api_scope())
             .service(login::api_scope())
