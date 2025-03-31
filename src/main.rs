@@ -1,4 +1,5 @@
 use clap::Parser;
+use dotenvy::dotenv;
 use mongodb::Client;
 use anyhow::Result;
 use env_logger;
@@ -15,6 +16,7 @@ use ywt::error::ApiError;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
+    dotenv().ok();
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     log::info!("Starting YWT server...");
     let args = Cli::parse();

@@ -8,10 +8,8 @@ use argon2::{
     },
     Argon2
 };
-use jsonwebtoken::{encode, Header, EncodingKey};
 
 use crate::jwt;
-use crate::jwt::SECRET;
 use crate::error::{ApiResult, ApiError, ApiErrorType};
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -48,17 +46,7 @@ async fn user_login(
         ));
     }
 
-    let iat = chrono::Utc::now();
-    let claims: jwt::Claims = jwt::Claims {
-        username: req.username.clone(),
-        iat: iat.timestamp() as usize,
-        exp: (iat + chrono::Duration::hours(12)).timestamp() as usize,
-    };
-    let token = encode(
-        &Header::default(), 
-        &claims, 
-        &EncodingKey::from_secret(SECRET.as_bytes())
-    )?;
+    let token = jwt::Claims::create_jwt(req.username.clone(), 12)?;
 
     Ok(HttpResponse::Ok().json(LoginResponse { token }))
 }
