@@ -31,6 +31,10 @@ You need to have [MongoDB](https://www.mongodb.com/) installed and running to st
 
 Change the `bind_address`, `bind_port`, `mongo_uri`, and `mongo_db` fields to your desired values. The app will use default values as above if you don't provide them.
 
+You need to set environment variable `YWT_SECRET`, which is used as the secret key for JWT signing. If you don't set it, the app will use a default value of `ywt_secret`.
+
+Environment variable `RUST_LOG` is used to set the log level. You can set it to `info`, `debug`, or `error`. If you don't set it, the app will use a default value of `info`.
+
 Suppose the binary excutable you built is `ywt`, you can start the server by:
 
 ```text
