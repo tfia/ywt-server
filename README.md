@@ -65,3 +65,24 @@ Response:
     "created_at": "2025-03-30 23:49:27.224212194 +08:00"
 }
 ```
+
+- POST `/login`
+
+Request:
+
+```json
+{
+    "username": "ywt",
+    "password": "testpassword"
+}
+```
+
+Response:
+
+```json
+{
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6Inl3dCIsImlhdCI6MTc0MzQwMDk4MywiZXhwIjoxNzQzNDQ0MTgzfQ.UDtzBfJ9cS60wkSWW0QUH9vw_4wnKizcuSE4ctTeuKs"
+}
+```
+
+This returns a JWT with JSON payload `{"username": , "iat": , "exp": }`. The token is valid for 12 hours.
