@@ -1,4 +1,5 @@
 use actix_web::{http::StatusCode, HttpResponse, ResponseError};
+use mongodb::bson::document::ValueAccessError;
 use serde::Serialize;
 use std::fmt;
 
@@ -91,7 +92,25 @@ impl From<argon2::password_hash::Error> for ApiError {
     fn from(err: argon2::password_hash::Error) -> Self {
         ApiError::new(
             ApiErrorType::Internal,
-            format!("Argon2 error: {}", err),
+            format!("Cryptography error: {}", err),
+        )
+    }
+}
+
+impl From<ValueAccessError> for ApiError {
+    fn from(err: ValueAccessError) -> Self {
+        ApiError::new(
+            ApiErrorType::Internal,
+            format!("Value access error: {}", err),
+        )
+    }
+}
+
+impl From<jsonwebtoken::errors::Error> for ApiError {
+    fn from(err: jsonwebtoken::errors::Error) -> Self {
+        ApiError::new(
+            ApiErrorType::Internal,
+            format!("JWT encode error: {}", err),
         )
     }
 }

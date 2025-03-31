@@ -34,7 +34,6 @@ async fn register_user(
     db: web::Data<Database>,
     req: web::Json<RegisterRequest>,
 ) -> ApiResult<impl Responder> {
-    
     if req.username.len() > MAX_USERNAME || req.username.len() == 0 {
         return Err(ApiError::new(
             ApiErrorType::InvalidRequest,
