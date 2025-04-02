@@ -105,6 +105,64 @@ Response:
 
 ```json
 {
+    "email": "ywt@example.com",
     "created_at": "2025-03-30 23:49:27.224212194 +08:00"
 }
 ```
+
+### GET `/problem/<problem_id>` [Authentication required]
+
+Response:
+
+```json
+{
+    "type": ["type1", "type2"],
+    "image": "<base64_image>"
+}
+```
+
+This returns problem image with the given ID in base64 format.
+
+### POST `/count` [Authentication required]
+
+Request:
+
+```json
+{
+    "type": ["type1", "type2"]
+}
+```
+
+Response:
+
+```json
+{
+    "status": "success"
+}
+```
+
+This API is used to count the different types of "knowledge points" that students mention in conversations with LLM assistant.
+
+### GET `/count` [Authentication required]
+
+Response:
+
+```json
+{
+    "status": "success"
+}
+```
+
+LLM assistant will call this API every time it receives a message from students.
+
+### GET `/send_email` [Authentication required]
+
+Response:
+
+```json
+{
+    "status": "success"
+}
+```
+
+This operation is used to send an email to all students, containing the statstics of the conversation with LLM assistant. 
