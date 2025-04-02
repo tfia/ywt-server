@@ -76,6 +76,13 @@ async fn register_user(
     };
     collection.insert_one(user_doc).await?;
 
+    let collection = db.collection("tags");
+    let tag_doc = doc! {
+        "username": &req.username,
+        "tags": {}, // Initialize with an empty object
+    };
+    collection.insert_one(tag_doc).await?;
+
     Ok(HttpResponse::Ok().json(RegisterResponse { created_at }))
 }
 
