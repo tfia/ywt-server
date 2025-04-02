@@ -7,21 +7,21 @@ use crate::jwt::ClaimsValidator;
 use crate::error::{ApiResult, ApiError, ApiErrorType};
 
 #[derive(Deserialize, Serialize, Clone)]
-pub struct CountRequest {
+pub struct StatsRequest {
     pub tag: Vec<String>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
-pub struct CountResponse {
+pub struct StatsResponse {
     pub conversation: i32,
     pub tags: Vec<(String, i32)>,
 }
 
 #[post("")]
-async fn post_count(
+async fn post_stats(
     db: web::Data<Database>,
     user: ClaimsValidator,
-    req: web::Json<CountRequest>,
+    req: web::Json<StatsRequest>,
 ) -> ApiResult<impl Responder> {
     let collection: Collection<Document> = db.collection("stats");
     let tags = &req.tag;
@@ -43,7 +43,7 @@ async fn post_count(
 }
 
 #[post("/conv")]
-async fn post_conv_count(
+async fn post_conv_stats(
     db: web::Data<Database>,
     user: ClaimsValidator,
 ) -> ApiResult<impl Responder> {
@@ -58,7 +58,7 @@ async fn post_conv_count(
 }
 
 #[get("")]
-async fn get_count(
+async fn get_stats(
     db: web::Data<Database>,
     user: ClaimsValidator,
 ) -> ApiResult<impl Responder> {
@@ -77,7 +77,7 @@ async fn get_count(
                     tags.push((key.to_string(), count));
                 }
             }
-            Ok(HttpResponse::Ok().json(CountResponse {
+            Ok(HttpResponse::Ok().json(StatsResponse {
                 conversation,
                 tags,
             }))
@@ -90,8 +90,8 @@ async fn get_count(
 }
 
 pub fn api_scope() -> Scope {
-    web::scope("/count")
-        .service(post_count)
-        .service(get_count)
-        .service(post_conv_count)
+    web::scope("/stats")
+        .service(post_stats)
+        .service(get_stats)
+        .service(post_conv_stats)
 }
