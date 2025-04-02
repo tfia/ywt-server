@@ -76,9 +76,10 @@ async fn register(
     };
     collection.insert_one(user_doc).await?;
 
-    let collection = db.collection("tags");
+    let collection = db.collection("stats");
     let tag_doc = doc! {
         "username": &req.username,
+        "conversation": 0,
         "tags": {}, // Initialize with an empty object
     };
     collection.insert_one(tag_doc).await?;
