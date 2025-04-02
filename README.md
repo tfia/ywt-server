@@ -116,7 +116,7 @@ Response:
 
 ```json
 {
-    "type": ["type1", "type2"],
+    "tag": ["type1", "type2"],
     "image": "<base64_image>"
 }
 ```
@@ -129,7 +129,7 @@ Request:
 
 ```json
 {
-    "type": ["type1", "type2"]
+    "tag": ["type1", "type2"]
 }
 ```
 
