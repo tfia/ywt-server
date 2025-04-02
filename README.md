@@ -123,7 +123,7 @@ Response:
 
 This returns problem image with the given ID in base64 format.
 
-### POST `/count` [Authentication required]
+### POST `/stats` [Authentication required]
 
 Request:
 
@@ -143,7 +143,13 @@ Response:
 
 This API is used to count the different types of "knowledge points" that students mention in conversations with LLM assistant.
 
-### GET `/count` [Authentication required]
+### POST `/stats/conv` [Authentication required]
+
+Request:
+
+```
+Request body will be ignored.
+```
 
 Response:
 
@@ -154,6 +160,28 @@ Response:
 ```
 
 LLM assistant will call this API every time it receives a message from students.
+
+### GET `/stats` [Authentication required]
+
+Response:
+
+```json
+{
+    "conversation": 3,
+    "tags": [
+        [
+            "tag1",
+            2
+        ],
+        [
+            "tag2",
+            2
+        ]
+    ]
+}
+```
+
+This API returns the statistics of the conversation with LLM assistant. The `conversation` field is the number of conversations with LLM assistant. The `tags` field is a list of tuples, where each tuple contains a tag (different types of "knowledge points") and the number of times it was mentioned in conversations.
 
 ### GET `/send_email` [Authentication required]
 
