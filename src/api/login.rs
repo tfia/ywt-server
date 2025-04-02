@@ -24,7 +24,7 @@ pub struct LoginResponse {
 }
 
 #[post("")]
-async fn user_login(
+async fn login(
     db: web::Data<Database>,
     req: web::Json<LoginRequest>,
 ) -> ApiResult<impl Responder> {  
@@ -52,5 +52,5 @@ async fn user_login(
 }
 
 pub fn api_scope() -> Scope {
-    web::scope("/login").service(user_login)
+    web::scope("/login").service(login)
 }

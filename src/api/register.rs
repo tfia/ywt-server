@@ -30,7 +30,7 @@ pub struct RegisterResponse {
 }
 
 #[post("")]
-async fn register_user(
+async fn register(
     db: web::Data<Database>,
     req: web::Json<RegisterRequest>,
 ) -> ApiResult<impl Responder> {
@@ -87,5 +87,5 @@ async fn register_user(
 }
 
 pub fn api_scope() -> Scope {
-    web::scope("/register").service(register_user)
+    web::scope("/register").service(register)
 }
