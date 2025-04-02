@@ -8,6 +8,7 @@ use crate::error::{ApiResult, ApiError, ApiErrorType};
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct ProfileResponse {
+    pub email: String,
     pub created_at: String,
 }
 
@@ -25,9 +26,10 @@ async fn profile(
             "User not found".to_string(),
         ))?;
     
+    let email = user.get_str("email")?.to_string();
     let created_at = user.get_str("created_at")?.to_string();
 
-    Ok(HttpResponse::Ok().json(ProfileResponse { created_at }))
+    Ok(HttpResponse::Ok().json(ProfileResponse { created_at, email }))
 }
 
 pub fn api_scope() -> Scope {
