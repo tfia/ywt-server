@@ -51,6 +51,36 @@ async fn login(
     Ok(HttpResponse::Ok().json(LoginResponse { token }))
 }
 
+#[post("/admin")]
+async fn admin_login(
+    db: web::Data<Database>,
+    req: web::Json<LoginRequest>,
+) -> ApiResult<impl Responder> {
+    let collection = db.collection("admins");
+    let user: Document = collection
+        .find_one(doc! { "username": &req.username })
+        .await?
+        .ok_or(ApiError::new(
+            ApiErrorType::InvalidRequest,
+            "Error".to_string(),
+        ))?;
+    
+    let password: &str = user.get_str("password")?;
+    let parsed_hash = PasswordHash::new(password)?;
+    if Argon2::default().verify_password(&req.password.as_bytes(), &parsed_hash).is_err() {
+        return Err(ApiError::new(
+            ApiErrorType::InvalidRequest,
+            "Error".to_string(),
+        ));
+    }
+
+    let token = jwt::Claims::create_jwt(req.username.clone(), 12)?;
+
+    Ok(HttpResponse::Ok().json(LoginResponse { token }))
+}
+
 pub fn api_scope() -> Scope {
-    web::scope("/login").service(login)
+    web::scope("/login")
+        .service(login)
+        .service(admin_login)
 }
