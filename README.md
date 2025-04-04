@@ -25,11 +25,15 @@ You need to have [MongoDB](https://www.mongodb.com/) installed and running to st
     "bind_address": "localhost",
     "bind_port": 8080,
     "mongo_uri": "mongodb://localhost:27017",
-    "mongo_db": "ywt_db"
+    "mongo_db": "ywt_db",
+    "admin_username": "admin",
+    "admin_email": "test@example.com"
 }
 ```
 
 Change the `bind_address`, `bind_port`, `mongo_uri`, and `mongo_db` fields to your desired values. The app will use default values as above if you don't provide them.
+
+The `admin_username` and `admin_email` fields are used to create an default admin user when the app starts. The app will use default values as above if you don't provide them. You also need to set environment variable `YWT_ADMIN_PASSWORD`, otherwise the app will use a default value of `adminpassword`.
 
 You need to set environment variable `YWT_SECRET`, which is used as the secret key for JWT signing. If you don't set it, the app will use a default value of `ywt_secret`.
 
@@ -78,6 +82,28 @@ Response:
 }
 ```
 
+### POST `/register/admin` [Authentication required]
+
+Request:
+
+```json
+{
+    "username": "ywt",
+    "email": "ywt@example.com",
+    "password": "testpassword"
+}
+```
+
+Response:
+
+```json
+{
+    "created_at": "2025-03-30 23:49:27.224212194 +08:00"
+}
+```
+
+This API requires a valid admin JWT token.
+
 ### POST `/login`
 
 Request:
@@ -98,6 +124,25 @@ Response:
 ```
 
 This returns a JWT with JSON payload `{"username": , "iat": , "exp": }`. The token is valid for 12 hours.
+
+### POST `/login/admin`
+
+Request:
+
+```json
+{
+    "username": "admin",
+    "password": "adminpassword"
+}
+```
+
+Response:
+
+```json
+{
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6Inl3dCIsImlhdCI6MTc0MzQwMDk4MywiZXhwIjoxNzQzNDQ0MTgzfQ.UDtzBfJ9cS60wkSWW0QUH9vw_4wnKizcuSE4ctTeuKs"
+}
+```
 
 ### GET `/profile` [Authentication required]
 
