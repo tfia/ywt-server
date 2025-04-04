@@ -16,7 +16,7 @@ use argon2::{
     Argon2
 };
 
-use ywt::api::{register, login, profile, stats};
+use ywt::api::{register, login, profile, stats, problem};
 use ywt::cli::Cli;
 use ywt::config::Config;
 use ywt::error::ApiError;
@@ -98,6 +98,7 @@ async fn main() -> Result<()> {
             .service(login::api_scope())
             .service(profile::api_scope())
             .service(stats::api_scope())
+            .service(problem::api_scope())
             .default_service(web::to(|| async {
                 ApiError::new_not_found().error_response()
             }))
