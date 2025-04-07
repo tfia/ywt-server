@@ -20,7 +20,7 @@ Q_bank.forEach(item => {
     const doc = {
       _id: id,
       tags: tags,
-      image: new BSON.Binary(imageBuffer)  // Correct Binary constructor reference
+      image: Binary(imageBuffer)  // Use the MongoDB shell's Binary function
     };
     
     db.qbank.updateOne(
