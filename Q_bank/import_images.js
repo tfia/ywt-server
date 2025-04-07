@@ -1,9 +1,9 @@
-import { readFileSync } from 'fs';
+const fs = require('fs');
 
 const conn = new Mongo("localhost:27017");
 const db = conn.getDB("ywt_db");
 
-const qBankContent = readFileSync('./Q_bank.json', 'utf8');
+const qBankContent = fs.readFileSync('./Q_bank.json', 'utf8');
 const Q_bank = JSON.parse(qBankContent);
 
 print("Starting image import to collection 'qbank'...");
@@ -15,12 +15,12 @@ Q_bank.forEach(item => {
   try {
     const { id, tags, path: imagePath } = item;
     
-    const imageBuffer = readFileSync(imagePath, { encoding: null });
+    const imageBuffer = fs.readFileSync(imagePath);
     
     const doc = {
       _id: id,
       tags: tags,
-      image: Binary(imageBuffer)
+      image: new BSON.Binary(imageBuffer)  // Correct Binary constructor reference
     };
     
     db.qbank.updateOne(
