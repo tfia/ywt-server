@@ -10,6 +10,21 @@ use argon2::{
 
 use crate::error::ApiResult;
 
+pub struct AdminType;
+pub struct UserType;
+
+pub trait UserTypeTrait {
+    const VALUE: &'static str;
+}
+
+impl UserTypeTrait for AdminType {
+    const VALUE: &'static str = "admins";
+}
+
+impl UserTypeTrait for UserType {
+    const VALUE: &'static str = "users";
+}
+
 pub async fn check_user_exists(
     db: &Database,
     username: &str,
@@ -30,14 +45,14 @@ pub async fn check_admin_exists(
     Ok(admin.is_some())
 }
 
-pub async fn create_user(
+pub async fn create_user<T: UserTypeTrait>(
     db: &Database,
     username: &str,
     email: &str,
     password: &str,
     created_at: &str,
-    typ: &str, // "admins" or "users"
 ) -> ApiResult<()> {
+    let typ = T::VALUE;
     let collection = db.collection(typ);
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();

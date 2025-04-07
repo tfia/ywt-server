@@ -9,6 +9,7 @@ use crate::db::{
     check_user_exists,
     check_admin_exists,
     create_user,
+    AdminType, UserType
 };
 
 const MAX_USERNAME: usize = 32;
@@ -72,7 +73,7 @@ async fn register(
     }
 
     let created_at = chrono::Local::now().to_string();
-    create_user(&db, &req.username, &req.email, &req.password, &created_at, "users").await?;
+    create_user::<UserType>(&db, &req.username, &req.email, &req.password, &created_at).await?;
 
     let collection = db.collection("stats");
     let tag_doc = doc! {
@@ -117,7 +118,7 @@ async fn admin_register(
     }
 
     let created_at = chrono::Local::now().to_string();
-    create_user(&db, &req.username, &req.email, &req.password, &created_at, "admins").await?;
+    create_user::<AdminType>(&db, &req.username, &req.email, &req.password, &created_at).await?;
 
     Ok(HttpResponse::Ok().json(RegisterResponse { created_at }))
 }
