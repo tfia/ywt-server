@@ -1,17 +1,15 @@
 use actix_web::{post, web, HttpResponse, Responder, Scope};
 use serde::{Deserialize, Serialize};
-use mongodb::{Collection, Database};
-use mongodb::bson::{doc, Document};
-use argon2::{
-    password_hash::{
-        rand_core::OsRng,
-        PasswordHasher, SaltString
-    },
-    Argon2
-};
+use mongodb::Database;
+use mongodb::bson::doc;
 
 use crate::error::{ApiResult, ApiError, ApiErrorType};
 use crate::jwt::ClaimsValidator;
+use crate::db::{
+    check_user_exists,
+    check_admin_exists,
+    create_user,
+};
 
 const MAX_USERNAME: usize = 32;
 const MAX_EMAIL: usize = 64;
@@ -59,40 +57,22 @@ async fn register(
 ) -> ApiResult<impl Responder> {
     check_req(&req)?;
 
-    // check if admin with the same username exists
-    let collection: Collection<Document> = db.collection("admins");
-    let existing_admin = collection
-        .find_one(doc! { "username": &req.username })
-        .await?;
-    if existing_admin.is_some() {
+    if check_admin_exists(&db, &req.username).await? {
         return Err(ApiError::new(
             ApiErrorType::InvalidRequest,
             "Username already exists".to_string(),
         ));
     }
     
-    let collection = db.collection("users");
-    let existing_user = collection
-        .find_one(doc! { "username": &req.username })
-        .await?;
-    if existing_user.is_some() {
+    if check_user_exists(&db, &req.username).await? {
         return Err(ApiError::new(
             ApiErrorType::InvalidRequest,
             "Username already exists".to_string(),
         ));
     }
 
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
-    let password_hash = argon2.hash_password(req.password.as_bytes(), &salt)?.to_string();
     let created_at = chrono::Local::now().to_string();
-    let user_doc = doc! {
-        "username": &req.username,
-        "email": &req.email,
-        "password": password_hash,
-        "created_at": &created_at,
-    };
-    collection.insert_one(user_doc).await?;
+    create_user(&db, &req.username, &req.email, &req.password, &created_at, "users").await?;
 
     let collection = db.collection("stats");
     let tag_doc = doc! {
@@ -112,52 +92,32 @@ async fn admin_register(
     user: ClaimsValidator,
 ) -> ApiResult<impl Responder> {
     // check if user is admin
-    let collection: Collection<Document> = db.collection("admins");
-    if collection
-        .find_one(doc! { "username": &user.username })
-        .await?.is_none() {
-            return Err(ApiError::new(
-                ApiErrorType::InvalidRequest,
-                "Error".to_string(),
-            ));
-        }
+    if !check_admin_exists(&db, &user.username).await? {
+        return Err(ApiError::new(
+            ApiErrorType::InvalidRequest,
+            "Error".to_string(),
+        ));
+    }
     
     check_req(&req)?;
 
     // check if user with the same username exists
-    let collection: Collection<Document> = db.collection("users");
-    let existing_user = collection
-        .find_one(doc! { "username": &req.username })
-        .await?;
-    if existing_user.is_some() {
+    if check_user_exists(&db, &req.username).await? {
         return Err(ApiError::new(
             ApiErrorType::InvalidRequest,
             "Error".to_string(),
         ));
     }
 
-    let collection = db.collection("admins");
-    let existing_user = collection
-        .find_one(doc! { "username": &req.username })
-        .await?;
-    if existing_user.is_some() {
+    if check_admin_exists(&db, &req.username).await? {
         return Err(ApiError::new(
             ApiErrorType::InvalidRequest,
             "Error".to_string(),
         ));
     }
 
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
-    let password_hash = argon2.hash_password(req.password.as_bytes(), &salt)?.to_string();
     let created_at = chrono::Local::now().to_string();
-    let user_doc = doc! {
-        "username": &req.username,
-        "email": &req.email,
-        "password": password_hash,
-        "created_at": &created_at,
-    };
-    collection.insert_one(user_doc).await?;
+    create_user(&db, &req.username, &req.email, &req.password, &created_at, "admins").await?;
 
     Ok(HttpResponse::Ok().json(RegisterResponse { created_at }))
 }
