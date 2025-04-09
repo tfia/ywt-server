@@ -8,4 +8,7 @@ pub struct Config {
     pub mongo_db: String,
     pub admin_username: String,
     pub admin_email: String,
+    pub smtp_server: String,
+    pub smtp_port: u16,
+    pub smtp_username: String,
 }

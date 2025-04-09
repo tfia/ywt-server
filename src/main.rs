@@ -16,7 +16,7 @@ use argon2::{
     Argon2
 };
 
-use ywt::api::{register, login, profile, stats, problem};
+use ywt::api::{register, login, profile, stats, problem, send_email};
 use ywt::cli::Cli;
 use ywt::config::Config;
 use ywt::error::ApiError;
@@ -34,6 +34,9 @@ async fn main() -> Result<()> {
         mongo_db,
         admin_username,
         admin_email,
+        smtp_server,
+        smtp_port,
+        smtp_username,
     ) = match args.config {
         Some(path) => {
             let config_json = std::fs::read_to_string(&path)?;
@@ -44,7 +47,10 @@ async fn main() -> Result<()> {
                 config.mongo_uri,
                 config.mongo_db,
                 config.admin_username,
-                config.admin_email
+                config.admin_email,
+                config.smtp_server,
+                config.smtp_port,
+                config.smtp_username,
             )
         },
         None => {
@@ -55,9 +61,15 @@ async fn main() -> Result<()> {
                 "ywt_db".to_string(),
                 "admin".to_string(),
                 "test@example.com".to_string(),
+                "smtp.gmail.com".to_string(),
+                587,
+                "your-email@gmail.com".to_string(),
             )
         }
     };
+
+    log::info!("{}", smtp_server);
+
     let client = Client::with_uri_str(mongo_uri).await?;
     let db = client.database(&mongo_db);
 
@@ -94,11 +106,13 @@ async fn main() -> Result<()> {
             .wrap(Logger::default())
             .wrap(cors)
             .app_data(web::Data::new(db.clone()))
+            .app_data(web::Data::new((smtp_server.clone(), smtp_username.clone(), smtp_port)))
             .service(register::api_scope())
             .service(login::api_scope())
             .service(profile::api_scope())
             .service(stats::api_scope())
             .service(problem::api_scope())
+            .service(send_email::api_scope())
             .default_service(web::to(|| async {
                 ApiError::new_not_found().error_response()
             }))
