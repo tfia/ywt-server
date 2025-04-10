@@ -1,3 +1,5 @@
+use core::panic;
+
 use clap::Parser;
 use dotenvy::dotenv;
 use mongodb::Client;
@@ -15,11 +17,14 @@ use argon2::{
     },
     Argon2
 };
+use lettre::transport::smtp::authentication::Credentials;
+use lettre::SmtpTransport;
 
-use ywt::api::{register, login, profile, stats, problem, send_email};
+use ywt::api::{register, login, profile, stats, problem, send_email, verify_email};
 use ywt::cli::Cli;
 use ywt::config::Config;
 use ywt::error::ApiError;
+use ywt::email::SMTP_USERNAME;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -28,6 +33,7 @@ async fn main() -> Result<()> {
     log::info!("Starting YWT server...");
     let args = Cli::parse();
     let (
+        config,
         bind_address,
         bind_port,
         mongo_uri,
@@ -42,6 +48,7 @@ async fn main() -> Result<()> {
             let config_json = std::fs::read_to_string(&path)?;
             let config: Config = serde_json::from_str(&config_json)?;
             (
+                config.clone(),
                 config.bind_address,
                 config.bind_port,
                 config.mongo_uri,
@@ -54,21 +61,19 @@ async fn main() -> Result<()> {
             )
         },
         None => {
-            (
-                "localhost".to_string(),
-                8080,
-                "mongodb://localhost:27017".to_string(),
-                "ywt_db".to_string(),
-                "admin".to_string(),
-                "test@example.com".to_string(),
-                "smtp.gmail.com".to_string(),
-                587,
-                "your-email@gmail.com".to_string(),
-            )
+            panic!("No config file provided. Please provide a config file using --config <path>");
         }
     };
 
-    log::info!("{}", smtp_server);
+    *SMTP_USERNAME.write().unwrap() = smtp_username.clone();
+
+    let smtp_password = std::env::var("YWT_SMTP_PASSWORD").unwrap_or_else(|_| "your_password".to_string());
+    let creds = Credentials::new(smtp_username, smtp_password);
+    let mailer = SmtpTransport::starttls_relay(&smtp_server)
+        .unwrap()
+        .port(smtp_port)
+        .credentials(creds)
+        .build();
 
     let client = Client::with_uri_str(mongo_uri).await?;
     let db = client.database(&mongo_db);
@@ -106,13 +111,15 @@ async fn main() -> Result<()> {
             .wrap(Logger::default())
             .wrap(cors)
             .app_data(web::Data::new(db.clone()))
-            .app_data(web::Data::new((smtp_server.clone(), smtp_username.clone(), smtp_port)))
+            .app_data(web::Data::new(mailer.clone()))
+            .app_data(web::Data::new(config.clone()))
             .service(register::api_scope())
             .service(login::api_scope())
             .service(profile::api_scope())
             .service(stats::api_scope())
             .service(problem::api_scope())
             .service(send_email::api_scope())
+            .service(verify_email::api_scope())
             .default_service(web::to(|| async {
                 ApiError::new_not_found().error_response()
             }))

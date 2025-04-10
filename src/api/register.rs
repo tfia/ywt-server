@@ -1,7 +1,12 @@
 use actix_web::{post, web, HttpResponse, Responder, Scope};
+use rand::distr::Alphanumeric;
 use serde::{Deserialize, Serialize};
 use mongodb::Database;
 use mongodb::bson::doc;
+use fast_chemail::is_valid_email;
+use lettre::{Message, SmtpTransport, Transport};
+use lettre::message::header::ContentType;
+use rand::{rng, Rng};
 
 use crate::error::{ApiResult, ApiError, ApiErrorType};
 use crate::jwt::ClaimsValidator;
@@ -11,6 +16,7 @@ use crate::db::{
     create_user,
     AdminType, UserType
 };
+use crate::config::Config;
 
 const MAX_USERNAME: usize = 32;
 const MAX_EMAIL: usize = 64;
@@ -29,7 +35,7 @@ pub struct RegisterResponse {
     pub created_at: String,
 }
 
-fn check_req(req: &RegisterRequest) -> ApiResult<()> {
+fn check_req(req: &RegisterRequest, tsinghua: bool) -> ApiResult<()> {
     if req.username.len() > MAX_USERNAME || req.username.len() == 0 {
         return Err(ApiError::new(
             ApiErrorType::InvalidRequest,
@@ -48,6 +54,21 @@ fn check_req(req: &RegisterRequest) -> ApiResult<()> {
             "Invalid password".to_string(),
         ));
     }
+
+    // check email: must be valid email,
+    // and satisfies *@mails.tsinghua.edu.cn or *@tsinghua.edu.cn
+    if !is_valid_email(&req.email) {
+        return Err(ApiError::new(
+            ApiErrorType::InvalidRequest,
+            "Invalid email".to_string(),
+        ));
+    }
+    if tsinghua && !req.email.ends_with("@mails.tsinghua.edu.cn") && !req.email.ends_with("@tsinghua.edu.cn") {
+        return Err(ApiError::new(
+            ApiErrorType::InvalidRequest,
+            "Invalid email".to_string(),
+        ));
+    }
     Ok(())
 }
 
@@ -55,8 +76,10 @@ fn check_req(req: &RegisterRequest) -> ApiResult<()> {
 async fn register(
     db: web::Data<Database>,
     req: web::Json<RegisterRequest>,
+    mailer: web::Data<SmtpTransport>,
+    config: web::Data<Config>,
 ) -> ApiResult<impl Responder> {
-    check_req(&req)?;
+    check_req(&req, true)?;
 
     if check_admin_exists(&db, &req.username).await? {
         return Err(ApiError::new(
@@ -83,6 +106,40 @@ async fn register(
     };
     collection.insert_one(tag_doc).await?;
 
+    // generate activation code - random 32-character string
+    let activation_code: String = rng()
+        .sample_iter(&Alphanumeric)
+        .take(32)
+        .map(char::from)
+        .collect();
+    
+    // Store the activation code in the database
+    let activation_collection = db.collection("activation_codes");
+    let activation_doc = doc! {
+        "username": &req.username,
+        "code": &activation_code,
+        "created_at": &created_at,
+        "expires_at": (chrono::Local::now() + chrono::Duration::days(3)).to_string(),
+    };
+    activation_collection.insert_one(activation_doc).await?;
+
+    // send activation email
+    let sender = format!("YWT Bot <{}>", config.smtp_username);
+    let to = format!("{} <{}>", req.username, req.email);
+    let email = Message::builder()
+        .from(sender.parse().unwrap())
+        .to(to.parse().unwrap())
+        .subject("Activate your YWT account")
+        .header(ContentType::TEXT_PLAIN)
+        .body(format!("Hello {},\n\nYour activation code is {}\n\nThis code will expire in 3 days.\n\nBest regards,\nYWT Team", 
+            req.username, activation_code))
+        .unwrap();
+    
+    match mailer.send(&email) {
+        Ok(_) => log::info!("Activation email sent to {}", req.username),
+        Err(e) => log::error!("Failed to send activation email to {}: {}", req.username, e),
+    }
+
     Ok(HttpResponse::Ok().json(RegisterResponse { created_at }))
 }
 
@@ -100,7 +157,7 @@ async fn admin_register(
         ));
     }
     
-    check_req(&req)?;
+    check_req(&req, false)?;
 
     // check if user with the same username exists
     if check_user_exists(&db, &req.username).await? {

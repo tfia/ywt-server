@@ -22,7 +22,7 @@ impl UserTypeTrait for AdminType {
 }
 
 impl UserTypeTrait for UserType {
-    const VALUE: &'static str = "users";
+    const VALUE: &'static str = "tmp_users";
 }
 
 pub async fn check_user_exists(
@@ -64,5 +64,28 @@ pub async fn create_user<T: UserTypeTrait>(
         "created_at": created_at,
     };
     collection.insert_one(user_doc).await?;
+    Ok(())
+}
+
+pub async fn activate_user(
+    db: &Database,
+    username: &str,
+) -> ApiResult<()> {
+    let tmp_collection: Collection<Document> = db.collection("tmp_users");
+    let users_collection = db.collection("users");
+    let filter = doc! { "username": username };
+    let user = tmp_collection.find_one(filter.clone()).await?;
+    if let Some(user_doc) = user {
+        let email = user_doc.get_str("email")?;
+        let password = user_doc.get_str("password")?;
+        let created_at = user_doc.get_str("created_at")?;
+        users_collection.insert_one(doc! {
+            "username": username,
+            "email": email,
+            "password": password,
+            "created_at": created_at,
+        }).await?;
+        tmp_collection.delete_one(filter).await?;
+    }
     Ok(())
 }

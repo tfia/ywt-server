@@ -3,18 +3,19 @@ use lettre::message::header::ContentType;
 use mongodb::{Database, Collection};
 use mongodb::bson::{doc, Document};
 use futures::TryStreamExt;
-use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 
+use crate::config::Config;
 use crate::jwt::ClaimsValidator;
 use crate::error::{ApiResult, ApiError, ApiErrorType};
 use crate::db;
 
 #[get("")]
-async fn send_stats_email(
+async fn send_email(
     db: web::Data<Database>,
-    smtp: web::Data<(String, String, u16)>,
+    mailer: web::Data<SmtpTransport>,
     user: ClaimsValidator,
+    config: web::Data<Config>,
 ) -> ApiResult<impl Responder> {
     // Verify if the user is an admin
     if !db::check_admin_exists(&db, &user.username).await? {
@@ -23,16 +24,6 @@ async fn send_stats_email(
             "Admin access required".to_string(),
         ));
     }
-    
-    // Configure SMTP Transport
-    let (smtp_server, smtp_username, smtp_port) = smtp.as_ref().clone();
-    let smtp_password = std::env::var("YWT_SMTP_PASSWORD").unwrap_or_else(|_| "your_password".to_string());
-    let creds = Credentials::new(smtp_username.to_string(), smtp_password.to_string());
-    let mailer = SmtpTransport::starttls_relay(&smtp_server.to_string())
-        .unwrap()
-        .port(smtp_port)
-        .credentials(creds)
-        .build();
 
     // Get all users and their stats
     let users_collection: Collection<Document> = db.collection("users");
@@ -43,7 +34,7 @@ async fn send_stats_email(
         let email = user_doc.get_str("email")?;
         let username = user_doc.get_str("username")?;
 
-        let sender = format!("YWT Bot <{}>", smtp_username.to_string());
+        let sender = format!("YWT Bot <{}>", config.smtp_username);
         let to = format!("{} <{}>", username, email);
 
         if let Some(stats_doc) = stats_collection.find_one(doc! { "username": username }).await? {
@@ -73,5 +64,5 @@ async fn send_stats_email(
 
 pub fn api_scope() -> Scope {
     web::scope("/send_email")
-        .service(send_stats_email)
+        .service(send_email)
 }
