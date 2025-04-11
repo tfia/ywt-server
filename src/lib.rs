@@ -4,4 +4,3 @@ pub mod db;
 pub mod error;
 pub mod api;
 pub mod jwt;
-pub mod email;

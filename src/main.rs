@@ -24,7 +24,6 @@ use ywt::api::{register, login, profile, modify, stats, problem, send_email, ver
 use ywt::cli::Cli;
 use ywt::config::Config;
 use ywt::error::ApiError;
-use ywt::email::SMTP_USERNAME;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -64,8 +63,6 @@ async fn main() -> Result<()> {
             panic!("No config file provided. Please provide a config file using --config <path>");
         }
     };
-
-    *SMTP_USERNAME.write().unwrap() = smtp_username.clone();
 
     let smtp_password = std::env::var("YWT_SMTP_PASSWORD").unwrap_or_else(|_| "your_password".to_string());
     let creds = Credentials::new(smtp_username, smtp_password);
