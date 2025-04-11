@@ -20,7 +20,7 @@ use argon2::{
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::SmtpTransport;
 
-use ywt::api::{register, login, profile, stats, problem, send_email, verify_email};
+use ywt::api::{register, login, profile, modify, stats, problem, send_email, verify_email};
 use ywt::cli::Cli;
 use ywt::config::Config;
 use ywt::error::ApiError;
@@ -116,6 +116,7 @@ async fn main() -> Result<()> {
             .service(register::api_scope())
             .service(login::api_scope())
             .service(profile::api_scope())
+            .service(modify::api_scope())
             .service(stats::api_scope())
             .service(problem::api_scope())
             .service(send_email::api_scope())
