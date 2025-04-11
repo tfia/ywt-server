@@ -8,6 +8,7 @@ use crate::error::{ApiResult, ApiError, ApiErrorType};
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct ProfileResponse {
+    pub username: String,
     pub email: String,
     pub created_at: String,
 }
@@ -17,9 +18,10 @@ async fn profile(
     db: web::Data<Database>,
     user: ClaimsValidator,
 ) -> ApiResult<impl Responder> {  
+    let username = user.username;
     let collection = db.collection("users");
     let user: Document = collection
-        .find_one(doc! { "username": &user.username })
+        .find_one(doc! { "username": &username })
         .await?
         .ok_or(ApiError::new(
             ApiErrorType::InvalidRequest,
@@ -29,7 +31,7 @@ async fn profile(
     let email = user.get_str("email")?.to_string();
     let created_at = user.get_str("created_at")?.to_string();
 
-    Ok(HttpResponse::Ok().json(ProfileResponse { created_at, email }))
+    Ok(HttpResponse::Ok().json(ProfileResponse { username, created_at, email }))
 }
 
 pub fn api_scope() -> Scope {
