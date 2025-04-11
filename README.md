@@ -27,13 +27,18 @@ You need to have [MongoDB](https://www.mongodb.com/) installed and running to st
     "mongo_uri": "mongodb://localhost:27017",
     "mongo_db": "ywt_db",
     "admin_username": "admin",
-    "admin_email": "test@example.com"
+    "admin_email": "test@example.com",
+    "smtp_server": "smtp.example.com",
+    "smtp_port": 587,
+    "smtp_username": "test@example.com"
 }
 ```
 
-Change the `bind_address`, `bind_port`, `mongo_uri`, and `mongo_db` fields to your desired values. The app will use default values as above if you don't provide them.
+Change the `bind_address`, `bind_port`, `mongo_uri`, and `mongo_db` fields to your desired values.
 
-The `admin_username` and `admin_email` fields are used to create an default admin user when the app starts. The app will use default values as above if you don't provide them. You also need to set environment variable `YWT_ADMIN_PASSWORD`, otherwise the app will use a default value of `adminpassword`.
+The `admin_username` and `admin_email` fields are used to create an default admin user when the app starts. You also need to set environment variable `YWT_ADMIN_PASSWORD`, otherwise the app will use a default value of `adminpassword`.
+
+The `smtp_server`, `smtp_port`, and `smtp_username` fields are used to send emails to students. You need to set them to your SMTP server's values. The SMTP server's password is set by environment variable `YWT_SMTP_PASSWORD`. If you don't set it, the app will use a default value of `your_password`.
 
 You need to set environment variable `YWT_SECRET`, which is used as the secret key for JWT signing. If you don't set it, the app will use a default value of `ywt_secret`.
 
@@ -150,6 +155,7 @@ Response:
 
 ```json
 {
+    "username": "ywt",
     "email": "ywt@example.com",
     "created_at": "2025-03-30 23:49:27.224212194 +08:00"
 }
