@@ -13,6 +13,7 @@ use argon2::{
 use crate::jwt::ClaimsValidator;
 use crate::error::{ApiResult, ApiError, ApiErrorType};
 use crate::db::{check_user_exists, check_admin_exists};
+use crate::utils::{check_username, check_password};
 
 #[derive(Deserialize)]
 pub struct ModifyUsernameRequest {
@@ -37,6 +38,8 @@ async fn modify_username(
     user: ClaimsValidator,
     req: web::Json<ModifyUsernameRequest>,
 ) -> ApiResult<impl Responder> {  
+    check_username(&req.new_username)?;
+    
     // Check if the new username already exists
     if check_user_exists(&db, &req.new_username).await? || check_admin_exists(&db, &req.new_username).await? {
         return Err(ApiError::new(
@@ -84,6 +87,8 @@ async fn modify_password(
     user: ClaimsValidator,
     req: web::Json<ModifyPasswordRequest>,
 ) -> ApiResult<impl Responder> {  
+    check_password(&req.new_password)?;
+
     let collection = db.collection::<Document>("users");
     
     // Find the current user

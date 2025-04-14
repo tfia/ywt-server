@@ -3,7 +3,6 @@ use rand::distr::Alphanumeric;
 use serde::{Deserialize, Serialize};
 use mongodb::Database;
 use mongodb::bson::doc;
-use fast_chemail::is_valid_email;
 use lettre::{Message, SmtpTransport, Transport};
 use lettre::message::header::ContentType;
 use rand::{rng, Rng};
@@ -17,11 +16,7 @@ use crate::db::{
     AdminType, UserType
 };
 use crate::config::Config;
-
-const MAX_USERNAME: usize = 32;
-const MAX_EMAIL: usize = 64;
-const MAX_PASSWORD: usize = 64;
-const MIN_PASSWORD: usize = 8;
+use crate::utils::{check_email, check_username, check_password, check_email_tsinghua};
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct RegisterRequest {
@@ -36,39 +31,13 @@ pub struct RegisterResponse {
 }
 
 fn check_req(req: &RegisterRequest, tsinghua: bool) -> ApiResult<()> {
-    if req.username.len() > MAX_USERNAME || req.username.len() == 0 {
-        return Err(ApiError::new(
-            ApiErrorType::InvalidRequest,
-            "Invalid username".to_string(),
-        ));
+    check_username(&req.username)?;
+    if tsinghua {
+        check_email_tsinghua(&req.email)?;
+    } else {
+        check_email(&req.email)?;
     }
-    if req.email.len() > MAX_EMAIL || req.email.len() == 0 {
-        return Err(ApiError::new(
-            ApiErrorType::InvalidRequest,
-            "Invalid email".to_string(),
-        ));
-    }
-    if req.password.len() > MAX_PASSWORD || req.password.len() < MIN_PASSWORD {
-        return Err(ApiError::new(
-            ApiErrorType::InvalidRequest,
-            "Invalid password".to_string(),
-        ));
-    }
-
-    // check email: must be valid email,
-    // and satisfies *@mails.tsinghua.edu.cn or *@tsinghua.edu.cn
-    if !is_valid_email(&req.email) {
-        return Err(ApiError::new(
-            ApiErrorType::InvalidRequest,
-            "Invalid email".to_string(),
-        ));
-    }
-    if tsinghua && !req.email.ends_with("@mails.tsinghua.edu.cn") && !req.email.ends_with("@tsinghua.edu.cn") {
-        return Err(ApiError::new(
-            ApiErrorType::InvalidRequest,
-            "Invalid email".to_string(),
-        ));
-    }
+    check_password(&req.password)?;
     Ok(())
 }
 
