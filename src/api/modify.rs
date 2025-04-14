@@ -131,7 +131,7 @@ async fn modify_password(
 }
 
 #[post("/delete")]
-async fn delete_account(
+async fn delete_user(
     db: web::Data<Database>,
     user: ClaimsValidator,
 ) -> ApiResult<impl Responder> {  
@@ -146,9 +146,26 @@ async fn delete_account(
     }))
 }
 
+#[post("/delete/admin")]
+async fn delete_admin(
+    db: web::Data<Database>,
+    user: ClaimsValidator,
+) -> ApiResult<impl Responder> {
+    let collection = db.collection::<Document>("admins");
+
+    collection
+        .delete_one(doc! { "username": &user.username })
+        .await?;
+    
+    Ok(HttpResponse::Ok().json(ModifyResponse { 
+        status: "success".to_string() 
+    }))
+}
+
 pub fn api_scope() -> Scope {
     web::scope("/modify")
         .service(modify_username)
         .service(modify_password)
-        .service(delete_account)
+        .service(delete_user)
+        .service(delete_admin)
 }
