@@ -39,7 +39,7 @@ async fn modify_username(
     req: web::Json<ModifyUsernameRequest>,
 ) -> ApiResult<impl Responder> {  
     check_username(&req.new_username)?;
-    
+
     // Check if the new username already exists
     if check_user_exists(&db, &req.new_username).await? || check_admin_exists(&db, &req.new_username).await? {
         return Err(ApiError::new(
@@ -130,8 +130,25 @@ async fn modify_password(
     }))
 }
 
+#[post("/delete")]
+async fn delete_account(
+    db: web::Data<Database>,
+    user: ClaimsValidator,
+) -> ApiResult<impl Responder> {  
+    let collection = db.collection::<Document>("users");
+
+    collection
+        .delete_one(doc! { "username": &user.username })
+        .await?;
+    
+    Ok(HttpResponse::Ok().json(ModifyResponse { 
+        status: "success".to_string() 
+    }))
+}
+
 pub fn api_scope() -> Scope {
     web::scope("/modify")
         .service(modify_username)
         .service(modify_password)
+        .service(delete_account)
 }
