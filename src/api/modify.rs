@@ -40,7 +40,7 @@ pub struct ModifyResponse {
 }
 
 fn check_role(role: &str) -> ApiResult<()> {
-    if role != "user" && role != "admin" {
+    if role != "users" && role != "admins" {
         return Err(ApiError::new(
             ApiErrorType::InvalidRequest,
             "Invalid role".to_string(),
