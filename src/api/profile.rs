@@ -5,6 +5,10 @@ use mongodb::bson::{doc, Document};
 
 use crate::jwt::ClaimsValidator;
 use crate::error::{ApiResult, ApiError, ApiErrorType};
+use crate::db::{
+    check_user_exists,
+    check_admin_exists,
+};
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct ProfileResponse {
@@ -19,7 +23,15 @@ async fn profile(
     user: ClaimsValidator,
 ) -> ApiResult<impl Responder> {  
     let username = user.username;
-    let collection = db.collection("users");
+    let collection = match check_user_exists(&db, &username).await {
+        Ok(true) => db.collection::<Document>("users"),
+        Ok(false) => match check_admin_exists(&db, &username).await {
+            Ok(true) => db.collection::<Document>("admins"),
+            Ok(false) => return Err(ApiError::new(ApiErrorType::InvalidRequest, "User not found".to_string())),
+            Err(_) => return Err(ApiError::new(ApiErrorType::Internal, "Database error".to_string())),
+        },
+        Err(_) => return Err(ApiError::new(ApiErrorType::Internal, "Database error".to_string())),
+    };
     let user: Document = collection
         .find_one(doc! { "username": &username })
         .await?
