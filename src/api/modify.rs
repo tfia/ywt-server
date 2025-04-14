@@ -17,19 +17,36 @@ use crate::utils::{check_username, check_password};
 
 #[derive(Deserialize)]
 pub struct ModifyUsernameRequest {
+    pub role: String,
     pub new_username: String,
     pub password: String,
 }
 
 #[derive(Deserialize)]
 pub struct ModifyPasswordRequest {
+    pub role: String,
     pub current_password: String,
     pub new_password: String,
+}
+
+#[derive(Deserialize)]
+pub struct DeleteRequest {
+    pub role: String,
 }
 
 #[derive(Serialize)]
 pub struct ModifyResponse {
     pub status: String,
+}
+
+fn check_role(role: &str) -> ApiResult<()> {
+    if role != "user" && role != "admin" {
+        return Err(ApiError::new(
+            ApiErrorType::InvalidRequest,
+            "Invalid role".to_string(),
+        ));
+    }
+    Ok(())
 }
 
 #[post("/username")]
@@ -38,6 +55,8 @@ async fn modify_username(
     user: ClaimsValidator,
     req: web::Json<ModifyUsernameRequest>,
 ) -> ApiResult<impl Responder> {  
+    check_role(&req.role)?;
+
     check_username(&req.new_username)?;
 
     // Check if the new username already exists
@@ -49,7 +68,7 @@ async fn modify_username(
     }
     
     // Find the current user
-    let collection = db.collection::<Document>("users");
+    let collection = db.collection::<Document>(&req.role);
     let user_doc = collection
         .find_one(doc! { "username": &user.username })
         .await?
@@ -87,9 +106,11 @@ async fn modify_password(
     user: ClaimsValidator,
     req: web::Json<ModifyPasswordRequest>,
 ) -> ApiResult<impl Responder> {  
+    check_role(&req.role)?;
+    
     check_password(&req.new_password)?;
 
-    let collection = db.collection::<Document>("users");
+    let collection = db.collection::<Document>(&req.role);
     
     // Find the current user
     let user_doc = collection
@@ -134,24 +155,11 @@ async fn modify_password(
 async fn delete_user(
     db: web::Data<Database>,
     user: ClaimsValidator,
+    req: web::Json<DeleteRequest>,
 ) -> ApiResult<impl Responder> {  
-    let collection = db.collection::<Document>("users");
+    check_role(&req.role)?;
 
-    collection
-        .delete_one(doc! { "username": &user.username })
-        .await?;
-    
-    Ok(HttpResponse::Ok().json(ModifyResponse { 
-        status: "success".to_string() 
-    }))
-}
-
-#[post("/delete/admin")]
-async fn delete_admin(
-    db: web::Data<Database>,
-    user: ClaimsValidator,
-) -> ApiResult<impl Responder> {
-    let collection = db.collection::<Document>("admins");
+    let collection = db.collection::<Document>(&req.role);
 
     collection
         .delete_one(doc! { "username": &user.username })
@@ -167,5 +175,4 @@ pub fn api_scope() -> Scope {
         .service(modify_username)
         .service(modify_password)
         .service(delete_user)
-        .service(delete_admin)
 }
