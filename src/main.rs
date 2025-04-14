@@ -76,12 +76,11 @@ async fn main() -> Result<()> {
     let db = client.database(&mongo_db);
 
     let admin_password = std::env::var("YWT_ADMIN_PASSWORD").unwrap_or_else(|_| "adminpassword".to_string());
-    // check if the admin user exists
-    let collection = db.collection("admins");
-    let existing_admin = collection
-        .find_one(doc! { "username": &admin_username })
-        .await?;
-    if existing_admin.is_none() {
+    // check if the admins collection is empty
+    let collection = db.collection::<mongodb::bson::Document>("admins");
+    let admin_count = collection.count_documents(doc! {}).await?;
+
+    if admin_count == 0 {
         // create the admin user
         let salt = SaltString::generate(&mut OsRng);
         let argon2 = Argon2::default();
@@ -93,9 +92,11 @@ async fn main() -> Result<()> {
             "username": &admin_username,
             "password": password_hash,
             "email": &admin_email,
-            "created_at": chrono::Local::now().to_string(),
+            "created_at": chrono::Utc::now().to_rfc3339(), // Use UTC time and standard format
         }).await?;
         log::info!("Admin user created: {}", admin_username);
+    } else {
+        log::info!("Admin collection is not empty, skipping admin creation.");
     }
 
     HttpServer::new(move || {
