@@ -244,4 +244,62 @@ Response:
 }
 ```
 
-This operation is used to send an email to all students, containing the statstics of the conversation with LLM assistant. 
+This operation is used to send an email to all students, containing the statstics of the conversation with LLM assistant.
+
+### GET `/users/list` [Authentication required]
+
+Response:
+
+```json
+{
+    "usernames": ["user1", "user2"],
+    "emails": ["user1@example.com", "user2@example.com"],
+    "created_at": ["2025-03-30 23:49:27.224212194 +08:00", "2025-03-31 10:15:00.123456789 +08:00"]
+}
+```
+
+This API returns a list of all users, including their usernames, emails, and creation timestamps. Requires an admin JWT token.
+
+### POST `/users/delete` [Authentication required]
+
+Request:
+
+```json
+{
+    "username": "user1"
+}
+```
+
+Response:
+
+```json
+{
+    "status": "success"
+}
+```
+
+This API deletes a user and their associated statistics. Requires an admin JWT token.
+
+### GET `/users/stats` [Authentication required]
+
+Request:
+
+```json
+{
+    "username": "user1"
+}
+```
+
+Response:
+
+```json
+{
+    "conversation": 5,
+    "tags": [
+        ["tag1", 3],
+        ["tag2", 2]
+    ]
+}
+```
+
+This API retrieves the statistics of a specific user, including the number of conversations and tag counts. Requires an admin JWT token.
