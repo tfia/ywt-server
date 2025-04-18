@@ -21,11 +21,6 @@ pub struct DeleteUserRequest {
     pub username: String,
 }
 
-#[derive(Deserialize)]
-pub struct GetUserStatsRequest {
-    pub username: String,
-}
-
 #[get("/list")]
 async fn get_user_list(
     db: web::Data<Database>,
@@ -89,12 +84,13 @@ async fn delete_user(
     Ok(HttpResponse::Ok().json(serde_json::json!({ "status": "success" })))
 }
 
-#[get("/stats")]
+#[get("/stats/{username}")]
 async fn get_user_stats(
     db: web::Data<Database>,
     user: ClaimsValidator,
-    req: web::Json<GetUserStatsRequest>,
+    path: web::Path<String>,
 ) -> ApiResult<impl Responder> {
+    let username = path.into_inner();
     // Verify if the user is an admin
     if !check_admin_exists(&db, &user.username).await? {
         return Err(ApiError::new(
@@ -103,13 +99,13 @@ async fn get_user_stats(
         ));
     }
 
-    if !check_user_exists(&db, &req.username).await? {
+    if !check_user_exists(&db, &username).await? {
         return Err(ApiError::new_not_found());
     }
 
     let collection = db.collection::<Document>("stats");
     let user_doc = collection
-        .find_one(doc! { "username": &req.username })
+        .find_one(doc! { "username": &username })
         .await?;
 
     match user_doc {
