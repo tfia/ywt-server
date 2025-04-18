@@ -76,10 +76,10 @@ async fn register(
     };
     collection.insert_one(tag_doc).await?;
 
-    // generate activation code - random 32-character string
+    // generate activation code - random 6-character string
     let activation_code: String = rng()
         .sample_iter(&Alphanumeric)
-        .take(32)
+        .take(6)
         .map(char::from)
         .collect();
     
@@ -89,7 +89,7 @@ async fn register(
         "username": &req.username,
         "code": &activation_code,
         "created_at": &created_at,
-        "expires_at": (chrono::Local::now() + chrono::Duration::days(3)).to_string(),
+        "expires_at": (chrono::Local::now() + chrono::Duration::minutes(30)).to_string(),
     };
     activation_collection.insert_one(activation_doc).await?;
 
@@ -101,7 +101,7 @@ async fn register(
         .to(to.parse().unwrap())
         .subject("Activate your YWT account")
         .header(ContentType::TEXT_PLAIN)
-        .body(format!("Hello {},\n\nYour activation code is {}\n\nThis code will expire in 3 days.\n\nBest regards,\nYWT Team", 
+        .body(format!("Hello {},\n\nYour activation code is {}\n\nThis code will expire in 30 minutes.\n\nBest regards,\nYWT Team", 
             req.username, activation_code))
         .unwrap();
     
