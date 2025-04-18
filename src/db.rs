@@ -45,6 +45,16 @@ pub async fn check_admin_exists(
     Ok(admin.is_some())
 }
 
+pub async fn check_email_exists(
+    db: &Database,
+    email: &str,
+) -> ApiResult<bool> {
+    let collection: Collection<Document> = db.collection("users");
+    let filter = doc! { "email": email };
+    let user = collection.find_one(filter).await?;
+    Ok(user.is_some())
+}
+
 pub async fn create_user<T: UserTypeTrait>(
     db: &Database,
     username: &str,

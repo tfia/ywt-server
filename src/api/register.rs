@@ -12,6 +12,7 @@ use crate::jwt::ClaimsValidator;
 use crate::db::{
     check_user_exists,
     check_admin_exists,
+    check_email_exists,
     create_user,
     AdminType, UserType
 };
@@ -50,17 +51,17 @@ async fn register(
 ) -> ApiResult<impl Responder> {
     check_req(&req, true)?;
 
-    if check_admin_exists(&db, &req.username).await? {
+    if check_admin_exists(&db, &req.username).await? || check_user_exists(&db, &req.username).await? {
         return Err(ApiError::new(
             ApiErrorType::InvalidRequest,
             "Username already exists".to_string(),
         ));
     }
     
-    if check_user_exists(&db, &req.username).await? {
+    if check_email_exists(&db, &req.email).await? {
         return Err(ApiError::new(
             ApiErrorType::InvalidRequest,
-            "Username already exists".to_string(),
+            "Email already exists".to_string(),
         ));
     }
 
