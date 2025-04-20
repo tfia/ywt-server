@@ -4,3 +4,4 @@ config.json
 *.env
 /Q_bank/*
 !Q_bank/import_images.js
+!Q_bank/Q_bank.json

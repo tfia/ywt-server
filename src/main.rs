@@ -24,6 +24,7 @@ use ywt::api::{register, login, profile, modify, stats, problem, send_email, ver
 use ywt::cli::Cli;
 use ywt::config::Config;
 use ywt::error::ApiError;
+use ywt::api::problem::QBankEntry;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -63,6 +64,13 @@ async fn main() -> Result<()> {
             panic!("No config file provided. Please provide a config file using --config <path>");
         }
     };
+
+    let qbank_path = "./Q_bank/Q_bank.json";
+    let qbank_json_string = std::fs::read_to_string(qbank_path)
+        .expect(&format!("Failed to read Q_bank file at {}", qbank_path));
+    let qbank_data: Vec<QBankEntry> = serde_json::from_str(&qbank_json_string)
+        .expect("Failed to parse Q_bank.json");
+    log::info!("Successfully loaded {} entries from {}", qbank_data.len(), qbank_path);
 
     let smtp_password = std::env::var("YWT_SMTP_PASSWORD").unwrap_or_else(|_| "your_password".to_string());
     let creds = Credentials::new(smtp_username, smtp_password);
@@ -111,6 +119,7 @@ async fn main() -> Result<()> {
             .app_data(web::Data::new(db.clone()))
             .app_data(web::Data::new(mailer.clone()))
             .app_data(web::Data::new(config.clone()))
+            .app_data(web::Data::new(qbank_data.clone()))
             .service(register::api_scope())
             .service(login::api_scope())
             .service(profile::api_scope())

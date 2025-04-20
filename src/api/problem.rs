@@ -13,7 +13,14 @@ pub struct ProblemResponse {
     pub image: String,
 }
 
-#[get("/{problem_id}")]
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct QBankEntry {
+    pub id: String,
+    pub tags: Vec<String>,
+    pub path: String,
+}
+
+#[get("/get/{problem_id}")]
 async fn get_problem(
     db: web::Data<Database>,
     _user: ClaimsValidator,
@@ -61,7 +68,16 @@ async fn get_problem(
     }
 }
 
+#[get("/qbank")]
+async fn get_qbank(
+    qbank_data: web::Data<Vec<QBankEntry>>,
+    _user: ClaimsValidator,
+) -> ApiResult<impl Responder> {
+    Ok(HttpResponse::Ok().json(qbank_data.get_ref()))
+}
+
 pub fn api_scope() -> Scope {
     web::scope("/problem")
         .service(get_problem)
+        .service(get_qbank)
 }
