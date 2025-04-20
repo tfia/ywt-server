@@ -161,7 +161,7 @@ Response:
 }
 ```
 
-### GET `/problem/<problem_id>` [Authentication required]
+### GET `/problem/get/<problem_id>` [Authentication required]
 
 Response:
 
@@ -173,6 +173,21 @@ Response:
 ```
 
 This returns problem image with the given ID in base64 format.
+
+### GET `/problem/qbank` [Authentication required]
+
+Response:
+
+```json
+{
+    [
+        {"id": "1", "tags": ["一般电路分析"], "path": "./1.PNG"},
+        {"id": "2", "tags": ["动态电路", "运放", "二阶系统", "滤波器"], "path": "./2.PNG"}
+    ]
+}
+```
+
+This returns the `Q_bank/Q_bank.json`.
 
 ### POST `/stats` [Authentication required]
 
