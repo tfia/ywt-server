@@ -280,15 +280,7 @@ Response:
 
 This API deletes a user and their associated statistics. Requires an admin JWT token.
 
-### GET `/users/stats` [Authentication required]
-
-Request:
-
-```json
-{
-    "username": "user1"
-}
-```
+### GET `/users/stats/<username>` [Authentication required]
 
 Response:
 
