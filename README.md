@@ -261,6 +261,28 @@ Response:
 
 This operation is used to send an email to all students, containing the statstics of the conversation with LLM assistant.
 
+### POST `/send_email/single` [Authentication required]
+
+Request:
+
+```json
+{
+    "username": "ywt",
+    "title": "Test Email",
+    "content": "This is a test email."
+}
+```
+
+Response:
+
+```json
+{
+    "status": "success"
+}
+```
+
+This API sends an email to a specific user. Requires an admin JWT token.
+
 ### GET `/users/list` [Authentication required]
 
 Response:
