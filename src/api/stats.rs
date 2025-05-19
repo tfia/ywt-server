@@ -5,6 +5,7 @@ use mongodb::bson::{doc, Document};
 
 use crate::jwt::ClaimsValidator;
 use crate::error::{ApiResult, ApiError, ApiErrorType};
+use crate::db;
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct StatsRequest {
@@ -89,9 +90,34 @@ async fn get_stats(
     }
 }
 
+#[post("/clear")]
+async fn clear_stats(
+    db: web::Data<Database>,
+    user: ClaimsValidator,
+) -> ApiResult<impl Responder> {
+    // Verify if the user is an admin
+    if !db::check_admin_exists(&db, &user.username).await? {
+        return Err(ApiError::new(
+            ApiErrorType::InvalidRequest,
+            "Admin access required".to_string(),
+        ));
+    }
+
+    // clear all stats
+    let collection: Collection<Document> = db.collection("stats");
+    collection
+        .update_many(
+            doc! {},
+            doc! { "$set": { "conversation": 0, "tags": {} } },
+        )
+        .await?;
+    Ok(HttpResponse::Ok().json(serde_json::json!({ "status": "success" })))
+}
+
 pub fn api_scope() -> Scope {
     web::scope("/stats")
         .service(post_stats)
         .service(get_stats)
         .service(post_conv_stats)
+        .service(clear_stats)
 }
