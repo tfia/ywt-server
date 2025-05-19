@@ -249,6 +249,24 @@ Response:
 
 This API returns the statistics of the conversation with LLM assistant. The `conversation` field is the number of conversations with LLM assistant. The `tags` field is a list of tuples, where each tuple contains a tag (different types of "knowledge points") and the number of times it was mentioned in conversations.
 
+### POST `/stats/clear` [Authentication required]
+
+Request:
+
+```
+Request body will be ignored.
+```
+
+Response:
+
+```json
+{
+    "status": "success"
+}
+```
+
+This API clears statistics for all users. Requires an admin JWT token.
+
 ### GET `/send_email` [Authentication required]
 
 Response:
