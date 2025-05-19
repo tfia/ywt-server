@@ -46,12 +46,19 @@ async fn send_email(
         let to = format!("{} <{}>", username, email);
 
         if let Some(stats_doc) = stats_collection.find_one(doc! { "username": username }).await? {
+            let tags = stats_doc.get_document("tags")?;
+            let tags = tags.keys()
+                .map(|k| k.as_str())
+                .collect::<Vec<_>>();
+            let tag_str = tags.join(", ");
+            let conversation_count = stats_doc.get_i32("conversation")?;
             let email = Message::builder()
                 .from(sender.parse().unwrap())
                 .to(to.parse().unwrap())
-                .subject("Your YWT Stats")
+                .subject("YWT 答疑周报")
                 .header(ContentType::TEXT_PLAIN)
-                .body(format!("Here are your stats:\n{:?}", stats_doc))
+                .body(format!("{} 同学你好！\n\n感谢使用 YWT。以下是你的答疑周报：\n\n在过去一周内，你一共与智能助手交谈 {} 轮次，主要围绕 {} 等知识点。\n\n祝好！\nYWT Team", 
+                    username, conversation_count, tag_str))
                 .unwrap();
 
             match mailer.send(&email) {
